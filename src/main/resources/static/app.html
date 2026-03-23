@@ -37,6 +37,7 @@
         <div class="chips">
           <span class="chip" id="timerChip">倒计时 25:00</span>
           <button class="chip-btn" type="button" id="openReportBtn">查看报告</button>
+          <button class="chip-btn" type="button" id="openGrowthBtn">成长曲线</button>
         </div>
       </header>
 
@@ -84,10 +85,10 @@
 
   <aside class="drawer" id="reportDrawer">
     <header class="drawer-head">
-      <h3>面试评估报告</h3>
+      <h3 id="drawerTitle">面试评估报告</h3>
       <button class="close" id="closeDrawer" type="button">关闭</button>
     </header>
-    <div class="drawer-body">
+    <div class="drawer-body" id="drawerContent">
       <section class="block">
         <h4>总分</h4>
         <div class="score">
@@ -206,6 +207,7 @@
     </div>
   </div>
 
+  <script src="./vendor/chartjs/chart.umd.min.js"></script>
   <script src="./assets/js/interview-home.js?v=44"></script>
 </body>
 </html>

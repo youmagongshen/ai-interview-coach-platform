@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>成长曲线 - AI面试教练平台</title>
+  <link rel="stylesheet" href="assets/css/interview-home.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏 -->
+    <div class="panel sidebar">
+      <div class="brand">
+        <h1>AI面试教练</h1>
+        <p>追踪你的面试成长轨迹</p>
+        <div class="quick-links">
+          <a href="app.html">返回面试</a>
+          <a href="index.html">首页</a>
+        </div>
+      </div>
+
+      <div class="user">
+        <div class="avatar" id="avatar">U</div>
+        <div class="user-meta">
+          <strong id="userName">加载中...</strong>
+          <span id="userRole">用户ID</span>
+        </div>
+        <button class="logout" id="logoutBtn">退出</button>
+      </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="panel main">
+      <div class="top">
+        <div>
+          <h2 id="title">成长曲线</h2>
+          <p id="subtitle">查看历次面试成绩的变化趋势</p>
+        </div>
+      </div>
+
+      <div class="chat">
+        <!-- 成长统计卡片 -->
+        <section class="block" style="margin-top: 10px;">
+          <h4>成长统计</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px;">
+            <div style="text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--primary-light);" id="totalSessions">0</div>
+              <div class="hint">面试次数</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--primary-light);" id="avgScore">0</div>
+              <div class="hint">平均得分</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--primary-light);" id="highestScore">0</div>
+              <div class="hint">最高得分</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 28px; font-weight: bold; color: var(--primary-light);" id="lowestScore">0</div>
+              <div class="hint">最低得分</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 成长曲线图表 -->
+        <section class="block">
+          <h4>得分趋势图</h4>
+          <div style="height: 350px; margin-top: 15px;">
+            <canvas id="growthChart"></canvas>
+          </div>
+        </section>
+
+        <!-- 维度成长对比 -->
+        <section class="block">
+          <h4>维度成长对比</h4>
+          <div style="display: grid; gap: 12px; margin-top: 12px;">
+            <div>
+              <div class="hint">正确率 (前后对比)</div>
+              <div class="bar"><i id="correctnessBar" style="width: 0%"></i></div>
+            </div>
+            <div>
+              <div class="hint">深度分析 (前后对比)</div>
+              <div class="bar"><i id="depthBar" style="width: 0%"></i></div>
+            </div>
+            <div>
+              <div class="hint">逻辑性 (前后对比)</div>
+              <div class="bar"><i id="logicBar" style="width: 0%"></i></div>
+            </div>
+            <div>
+              <div class="hint">岗位匹配度 (前后对比)</div>
+              <div class="bar"><i id="matchBar" style="width: 0%"></i></div>
+            </div>
+            <div>
+              <div class="hint">表达能力 (前后对比)</div>
+              <div class="bar"><i id="expressionBar" style="width: 0%"></i></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 历史面试记录 -->
+        <section class="block">
+          <h4>历史面试记录</h4>
+          <div id="historyList" style="margin-top: 12px;">
+            <div class="hint">加载中...</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = '';
+      const STORE = {
+        userId: 'aiInterviewUserId',
+        accessToken: 'aiInterviewAccessToken',
+        refreshToken: 'aiInterviewRefreshToken'
+      };
+
+      const state = {
+        userId: 1,
+        accessToken: '',
+        sessions: [],
+        growthData: null
+      };
+
+      const userNameEl = document.getElementById('userName');
+      const userRoleEl = document.getElementById('userRole');
+      const avatarEl = document.getElementById('avatar');
+      const logoutBtn = document.getElementById('logoutBtn');
+
+      const totalSessionsEl = document.getElementById('totalSessions');
+      const avgScoreEl = document.getElementById('avgScore');
+      const highestScoreEl = document.getElementById('highestScore');
+      const lowestScoreEl = document.getElementById('lowestScore');
+      const historyListEl = document.getElementById('historyList');
+
+      const correctnessBar = document.getElementById('correctnessBar');
+      const depthBar = document.getElementById('depthBar');
+      const logicBar = document.getElementById('logicBar');
+      const matchBar = document.getElementById('matchBar');
+      const expressionBar = document.getElementById('expressionBar');
+
+      let growthChart = null;
+
+      function parsePositiveInt(v, fallback) {
+        const n = Number(v);
+        if (!Number.isFinite(n) || n <= 0) return fallback;
+        return Math.floor(n);
+      }
+
+      function escapeHtml(s) {
+        return String(s || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;');
+      }
+
+      function statusText(status) {
+        const map = {
+          DRAFT: '待开始',
+          IN_PROGRESS: '进行中',
+          FINISHED: '已结束',
+          ABANDONED: '已放弃'
+        };
+        return map[status] || (status || '-');
+      }
+
+      function loadAuth() {
+        state.userId = parsePositiveInt(localStorage.getItem(STORE.userId), 0);
+        state.accessToken = localStorage.getItem(STORE.accessToken) || '';
+        
+        if (!state.accessToken) {
+          window.location.href = './index.html';
+          return false;
+        }
+        return true;
+      }
+
+      function clearAuthAndBackLogin() {
+        localStorage.removeItem(STORE.accessToken);
+        localStorage.removeItem(STORE.refreshToken);
+        window.location.href = './index.html';
+      }
+
+      async function api(path, options) {
+        const opt = options || {};
+        const headers = {
+          Accept: 'application/json',
+          'X-User-Id': String(state.userId)
+        };
+
+        if (state.accessToken) {
+          headers.Authorization = `Bearer ${state.accessToken}`;
+        }
+
+        let body;
+        if (opt.body !== undefined) {
+          headers['Content-Type'] = 'application/json';
+          body = JSON.stringify(opt.body);
+        }
+
+        const url = new URL(API_BASE + path, window.location.origin);
+        if (opt.query) {
+          Object.entries(opt.query).forEach(([k, v]) => {
+            if (v === undefined || v === null || v === '') return;
+            url.searchParams.set(k, String(v));
+          });
+        }
+
+        const res = await fetch(url.toString(), {
+          method: opt.method || 'GET',
+          headers,
+          body
+        });
+
+        let payload;
+        try {
+          payload = await res.json();
+        } catch (e) {
+          throw new Error('服务端返回格式异常');
+        }
+
+        if (!res.ok) {
+          throw new Error((payload && payload.message) || `HTTP ${res.status}`);
+        }
+        if (!payload || payload.code !== 0) {
+          throw new Error((payload && payload.message) || '请求失败');
+        }
+        return payload.data;
+      }
+
+      async function loadProfile() {
+        try {
+          const me = await api('/inv/users/me');
+          if (!me) return;
+          userNameEl.textContent = me.username || `User-${state.userId}`;
+          userRoleEl.textContent = `用户ID ${me.id || state.userId}`;
+          avatarEl.textContent = (me.username || 'U').slice(0, 1).toUpperCase();
+        } catch (err) {
+          userNameEl.textContent = `User-${state.userId}`;
+          userRoleEl.textContent = '读取用户信息失败';
+        }
+      }
+
+      async function loadGrowthData() {
+        try {
+          const data = await api(`/inv/interview/growth?userId=${state.userId}`);
+          state.growthData = data;
+          renderGrowthChart(data);
+          renderStatistics(data);
+          renderDimensionBars(data);
+          renderHistory(data);
+        } catch (err) {
+          console.error('加载成长数据失败:', err);
+          historyListEl.innerHTML = '<div class="hint">加载失败，请稍后重试</div>';
+        }
+      }
+
+      function renderGrowthChart(data) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        
+        const labels = data.sessions ? data.sessions.map(s => {
+          const date = new Date(s.createdAt);
+          return `${date.getMonth() + 1}/${date.getDate()}`;
+        }) : ['第1次', '第2次', '第3次', '第4次', '第5次'];
+        
+        const scores = data.sessions ? data.sessions.map(s => s.totalScore || 0) : [70, 75, 80, 78, 85];
+
+        if (growthChart) {
+          growthChart.destroy();
+        }
+
+        growthChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '面试得分',
+              data: scores,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true,
+              pointBackgroundColor: '#6366f1',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                titleColor: '#e0e7ff',
+                bodyColor: '#e0e7ff',
+                borderColor: 'rgba(99, 102, 241, 0.5)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                callbacks: {
+                  label: function(context) {
+                    return `得分: ${context.parsed.y}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)',
+                  drawBorder: false
+                },
+                ticks: {
+                  color: '#94a3b8'
+                }
+              },
+              y: {
+                beginAtZero: true,
+                max: 100,
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)',
+                  drawBorder: false
+                },
+                ticks: {
+                  color: '#94a3b8',
+                  stepSize: 20
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function renderStatistics(data) {
+        const sessions = data.sessions || [];
+        const scores = sessions.map(s => s.totalScore || 0);
+        
+        totalSessionsEl.textContent = sessions.length;
+        
+        if (scores.length > 0) {
+          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+          avgScoreEl.textContent = Math.round(avg);
+          highestScoreEl.textContent = Math.max(...scores);
+          lowestScoreEl.textContent = Math.min(...scores);
+        }
+      }
+
+      function renderDimensionBars(data) {
+        if (!data.first || !data.last) {
+          return;
+        }
+
+        const first = data.first.dimensionScore || {};
+        const last = data.last.dimensionScore || {};
+
+        correctnessBar.style.width = `${last.correctness || 0}%`;
+        depthBar.style.width = `${last.depth || 0}%`;
+        logicBar.style.width = `${last.logic || 0}%`;
+        matchBar.style.width = `${last.match || 0}%`;
+        expressionBar.style.width = `${last.expression || 0}%`;
+      }
+
+      function renderHistory(data) {
+        const sessions = data.sessions || [];
+        
+        if (sessions.length === 0) {
+          historyListEl.innerHTML = '<div class="hint">暂无面试记录</div>';
+          return;
+        }
+
+        historyListEl.innerHTML = sessions.map(s => `
+          <div style="border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 8px; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;">
+            <div>
+              <div style="font-weight: 600; color: var(--ink);">${s.roleName || '面试'}</div>
+              <div class="hint">${statusText(s.status)} · ${s.createdAt || '-'}</div>
+            </div>
+            <div style="font-size: 20px; font-weight: bold; color: var(--primary-light);">${s.totalScore || 0}</div>
+          </div>
+        `).join('');
+      }
+
+      function bindEvents() {
+        logoutBtn.addEventListener('click', clearAuthAndBackLogin);
+      }
+
+      async function init() {
+        if (!loadAuth()) {
+          return;
+        }
+
+        bindEvents();
+        
+        try {
+          await loadProfile();
+          await loadGrowthData();
+        } catch (err) {
+          if (err.message && err.message.includes('401')) {
+            clearAuthAndBackLogin();
+            return;
+          }
+          console.error('初始化失败:', err);
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>

@@ -32,6 +32,10 @@
   const subtitleEl = document.getElementById('subtitle');
   const timerChipEl = document.getElementById('timerChip');
   const openReportBtn = document.getElementById('openReportBtn');
+  const openGrowthBtn = document.getElementById('openGrowthBtn');
+  const closeDrawerBtn = document.getElementById('closeDrawer');
+  const drawerTitle = document.getElementById('drawerTitle');
+  const drawerContent = document.getElementById('drawerContent');
 
   const chatEl = document.getElementById('chat');
   const roleSelectEl = document.getElementById('roleSelect');
@@ -1596,17 +1600,144 @@
   async function openReportDrawer() {
     if (!state.currentSessionId) throw new Error('请先选择会话');
 
+    drawerTitle.textContent = '面试评估报告';
+
     const [report, scores] = await Promise.all([
       api(`/inv/interview/sessions/${state.currentSessionId}/report`),
       api(`/inv/interview/sessions/${state.currentSessionId}/scores`)
     ]);
 
-    renderReport(report, scores || []);
+    renderReportContent(report, scores || []);
     reportDrawer.classList.add('open');
   }
 
   function closeReportDrawer() {
     reportDrawer.classList.remove('open');
+  }
+
+  // 渲染报告内容
+  function renderReportContent(report, scores) {
+    if (!report || !scores) {
+      drawerContent.innerHTML = '<div class="hint">暂无报告数据</div>';
+      return;
+    }
+
+    drawerContent.innerHTML = `
+      <section class="block">
+        <h4>总分</h4>
+        <div class="score">
+          <strong>${report.totalScore || 0}</strong>
+          <div style="flex:1">
+            <div class="hint">${report.summary || '暂无报告'}</div>
+            <div class="bar"><i style="width: ${(report.totalScore || 0) / 100 * 100}%"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h4>维度细分</h4>
+        ${scores.map(s => `
+          <div>
+            <div class="hint">${s.dimension || ''}</div>
+            <div class="bar"><i style="width: ${(s.score || 0) / 100 * 100}%"></i></div>
+          </div>
+        `).join('')}
+      </section>
+
+      <section class="block">
+        <h4>亮点与建议</h4>
+        <div class="hint">${report.highlights || '暂无'}</div>
+        <div class="hint">${report.improvements || '暂无'}</div>
+      </section>
+    `;
+  }
+
+  // 打开成长曲线抽屉
+  async function openGrowthDrawer() {
+    if (!state.userId) {
+      alert('请先登录');
+      return;
+    }
+
+    drawerTitle.textContent = '成长曲线';
+
+    try {
+      const res = await api(`/inv/interview/growth?userId=${state.userId}`);
+      const data = await res.json();
+
+      // 显示成长曲线
+      showGrowthChart(data);
+    } catch (err) {
+      throw new Error(err.message || '获取成长数据失败');
+    }
+  }
+
+  // 显示成长曲线图表
+  function showGrowthChart(data) {
+    const drawer = document.getElementById('reportDrawer');
+    const drawerBody = document.getElementById('drawerContent');
+
+    // 清空原有内容
+    drawerBody.innerHTML = '';
+
+    const section = document.createElement('section');
+    section.className = 'block';
+
+    const h4 = document.createElement('h4');
+    h4.textContent = '成长曲线';
+    section.appendChild(h4);
+
+    // 创建图表容器
+    const chartContainer = document.createElement('div');
+    chartContainer.style.height = '300px';
+    chartContainer.style.marginTop = '20px';
+    section.appendChild(chartContainer);
+
+    drawerBody.appendChild(section);
+
+    // 使用 Chart.js 绘制成长曲线
+    const ctx = chartContainer.getContext ? null : document.createElement('canvas');
+    if (!chartContainer.getContext) {
+      chartContainer.appendChild(ctx);
+    } else {
+      ctx = chartContainer.getContext('2d');
+    }
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.dates || ['第1次', '第2次', '第3次', '第4次', '第5次'],
+        datasets: [{
+          label: '面试得分',
+          data: data.scores || [70, 75, 80, 78, 85],
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              stepSize: 20
+            }
+          }
+        }
+      }
+    }
+    });
+
+    drawer.classList.add('open');
   }
 
   // 结束面试
@@ -1744,6 +1875,10 @@
 
     openReportBtn.addEventListener('click', () => {
       openReportDrawer().catch((err) => setTip(err.message || String(err), true));
+    });
+
+    openGrowthBtn.addEventListener('click', () => {
+      openGrowthDrawer().catch((err) => setTip(err.message || String(err), true));
     });
 
     closeDrawerBtn.addEventListener('click', closeReportDrawer);
