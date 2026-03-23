@@ -1,0 +1,35 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/interview?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: xjl123
+    hikari:
+      initialization-fail-timeout: 0
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+mybatis-plus:
+  mapper-locations: classpath*:/mybatis/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+logging:
+  level:
+    com.aiinterview: info
+
+auth:
+  jwt:
+    secret: ${JWT_SECRET:change-this-secret-in-production}
+    access-token-expires-in: ${JWT_ACCESS_TOKEN_EXPIRES_IN:7200}
+
+# 智谱清言API配置（免费额度）
+# 获取API Key: https://open.bigmodel.cn/
+zhipu:
+  api:
+    key: a7bf03a7e2e24a3797db9f371b4a78cb.p6KZhs6ZuvEM9kVQ

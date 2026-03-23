@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Interview Admin | 岗位与权重</title>
+  <link rel="stylesheet" href="./vendor/fontawesome/css/all.min.css" />
+  <link rel="stylesheet" href="./vendor/adminlte/adminlte.min.css" />
+  <link rel="stylesheet" href="./assets/css/admin-custom.css" />
+</head>
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed text-sm">
+<div class="wrapper">
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav"><li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li></ul>
+    <ul class="navbar-nav ml-auto"><li class="nav-item"><a href="./index.html" class="nav-link text-muted">返回仪表盘</a></li></ul>
+  </nav>
+
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <a href="./index.html" class="brand-link"><span class="brand-text font-weight-light ml-2">AI Interview Admin</span></a>
+    <div class="sidebar">
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <li class="nav-item"><a href="./index.html" data-menu="index.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>仪表盘</p></a></li>
+          <li class="nav-item"><a href="./roles.html" data-menu="roles.html" class="nav-link"><i class="nav-icon fas fa-balance-scale"></i><p>岗位与权重</p></a></li>
+          <li class="nav-item"><a href="./questions.html" data-menu="questions.html" class="nav-link"><i class="nav-icon fas fa-list"></i><p>题库管理</p></a></li>
+          <li class="nav-item"><a href="./knowledge.html" data-menu="knowledge.html" class="nav-link"><i class="nav-icon fas fa-book"></i><p>知识库管理</p></a></li>
+          <li class="nav-item"><a href="./reports.html" data-menu="reports.html" class="nav-link"><i class="nav-icon fas fa-file-alt"></i><p>会话与报告</p></a></li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <div class="content-wrapper">
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-8"><h1>岗位权重配置与维度管理</h1></div>
+          <div class="col-sm-4 text-right text-muted">每个岗位权重总和必须为 100</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="container-fluid">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">岗位列表</h3>
+            <button class="btn btn-primary btn-sm" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
+          </div>
+          <div class="card-body table-responsive p-0">
+            <table class="table table-hover text-nowrap mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th><th>岗位编码</th><th>岗位名称</th><th>岗位描述</th>
+                  <th>正确性</th><th>深度</th><th>逻辑性</th><th>匹配度</th><th>表达力</th><th>权重总和</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="roleTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal fade" id="roleModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">编辑岗位权重</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <form id="roleForm">
+          <input type="hidden" id="roleId" />
+          <div class="form-row">
+            <div class="form-group col-md-4"><label>岗位编码</label><input id="roleCode" class="form-control" readonly /></div>
+            <div class="form-group col-md-4"><label>岗位名称</label><input id="roleName" class="form-control" readonly /></div>
+            <div class="form-group col-md-4"><label>岗位描述</label><input id="roleDesc" class="form-control" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-2"><label>正确性</label><input id="w1" type="number" class="form-control weight-input" min="0" max="100" /></div>
+            <div class="form-group col-md-2"><label>深度</label><input id="w2" type="number" class="form-control weight-input" min="0" max="100" /></div>
+            <div class="form-group col-md-2"><label>逻辑性</label><input id="w3" type="number" class="form-control weight-input" min="0" max="100" /></div>
+            <div class="form-group col-md-2"><label>匹配度</label><input id="w4" type="number" class="form-control weight-input" min="0" max="100" /></div>
+            <div class="form-group col-md-2"><label>表达力</label><input id="w5" type="number" class="form-control weight-input" min="0" max="100" /></div>
+            <div class="form-group col-md-2"><label>权重总和</label><input id="wTotal" class="form-control" readonly /></div>
+          </div>
+          <div class="alert alert-warning py-2 mb-0" id="weightWarn" style="display:none;">请调整各维度权重，确保权重总和为 100。</div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="saveRoleBtn">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./vendor/jquery/jquery.min.js"></script>
+<script src="./vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="./vendor/adminlte/adminlte.min.js"></script>
+<script src="./assets/js/admin-api.js"></script>
+<script src="./assets/js/admin-common.js"></script>
+<script src="./assets/js/roles.js"></script>
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 模拟面试教练 - 主界面原型 V2</title>
+  <style>
+    :root {
+      --bg: #eef4f8;
+      --bg-soft: #f6fafc;
+      --card: #ffffff;
+      --line: #d6e1ef;
+      --ink: #14233a;
+      --sub: #5a6e88;
+      --primary: #116f95;
+      --primary-2: #1aa17d;
+      --accent: #e58a3c;
+      --danger: #ce4a5f;
+      --ok: #218865;
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --shadow: 0 18px 42px rgba(16, 44, 76, 0.15);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 10%, #d6e6ff 0, transparent 35%),
+        radial-gradient(circle at 94% 92%, #ffe5c8 0, transparent 35%),
+        var(--bg);
+    }
+
+    .app {
+      height: 100vh;
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      min-height: 0;
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto;
+      overflow: hidden;
+      position: relative;
+      animation: rise 0.55s ease;
+    }
+
+    .brand {
+      padding: 18px 16px 6px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .quick-links {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quick-links a {
+      text-decoration: none;
+      border: 1px solid #c8d8ea;
+      color: #275f83;
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 5px 10px;
+      background: #f3fbff;
+      font-weight: 700;
+    }
+
+    .btn-new {
+      margin: 0 16px 10px;
+      border: 0;
+      border-radius: 12px;
+      height: 42px;
+      color: #fff;
+      background: linear-gradient(120deg, var(--primary), var(--primary-2));
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .btn-new:hover { transform: translateY(-1px); }
+
+    .search {
+      margin: 0 16px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      height: 38px;
+      padding: 0 10px;
+      font-size: 14px;
+      color: #1a3a59;
+      background: var(--bg-soft);
+      outline: none;
+    }
+
+    .session-list {
+      overflow: auto;
+      padding: 6px 10px 14px;
+      display: grid;
+      gap: 9px;
+      align-content: start;
+    }
+
+    .session-item {
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: 0.16s ease;
+    }
+
+    .session-item:hover {
+      border-color: #bdd2e8;
+      transform: translateX(3px);
+    }
+
+    .session-item.active {
+      border-color: #8dc2df;
+      background: #edf8ff;
+    }
+
+    .session-item h4 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .session-item p {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.45;
+    }
+
+    .user {
+      border-top: 1px solid #e2ebf6;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 700;
+      background: linear-gradient(145deg, #1f89b4, #1c9c78);
+      flex-shrink: 0;
+    }
+
+    .user-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .user-meta strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .user-meta span {
+      display: block;
+      margin-top: 2px;
+      color: var(--sub);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .logout {
+      border: 1px solid #d5e3f2;
+      background: #fff;
+      border-radius: 9px;
+      font-size: 12px;
+      color: #3d5473;
+      cursor: pointer;
+      height: 30px;
+      padding: 0 10px;
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      animation: rise 0.55s ease;
+    }
+
+    .top {
+      border-bottom: 1px solid var(--line);
+      background: #f5f9fd;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .top h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .top p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--sub);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      border: 1px solid #c8daeb;
+      border-radius: 999px;
+      background: #fff;
+      color: #2d4d6d;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 10px;
+    }
+
+    .chat {
+      overflow: auto;
+      padding: 16px;
+      background:
+        linear-gradient(0deg, rgba(255,255,255,0.95), rgba(255,255,255,0.95)),
+        repeating-linear-gradient(
+          0deg,
+          #f8fbff,
+          #f8fbff 28px,
+          #f5f9fd 28px,
+          #f5f9fd 56px
+        );
+      display: grid;
+      align-content: start;
+      gap: 12px;
+    }
+
+    .bubble {
+      max-width: min(760px, 92%);
+      border-radius: 14px;
+      border: 1px solid #d6e3f0;
+      padding: 10px 12px;
+      line-height: 1.66;
+      font-size: 14px;
+      animation: rise 0.25s ease;
+      box-shadow: 0 5px 12px rgba(20, 44, 70, 0.06);
+    }
+
+    .bubble.ai {
+      background: #fff;
+      justify-self: start;
+    }
+
+    .bubble.user {
+      background: #e8f8f1;
+      border-color: #b7dfcf;
+      justify-self: end;
+    }
+
+    .bubble .meta {
+      font-size: 11px;
+      color: var(--sub);
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .composer {
+      border-top: 1px solid var(--line);
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 220px 200px 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .composer select,
+    .composer input[type="text"] {
+      height: 40px;
+      border: 1px solid #c8d7e9;
+      border-radius: 10px;
+      background: #fafeff;
+      color: #183553;
+      padding: 0 10px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .composer input[type="file"] {
+      display: none;
+    }
+
+    .upload {
+      border: 1px dashed #8eb6d2;
+      border-radius: 10px;
+      background: #f3fbff;
+      color: #2f5f84;
+      font-size: 13px;
+      font-weight: 700;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-send,
+    .btn-start {
+      border: 0;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      height: 40px;
+      padding: 0 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-start { background: linear-gradient(120deg, #1e7ea6, #1d9d7a); }
+    .btn-send { background: linear-gradient(120deg, #217d5f, #17a07a); }
+
+    .btn-send:disabled {
+      background: #9ab8b0;
+      cursor: not-allowed;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 14px;
+      right: -460px;
+      width: min(440px, calc(100vw - 26px));
+      height: calc(100vh - 28px);
+      border-radius: 18px;
+      border: 1px solid #d4e2f0;
+      background: #fff;
+      box-shadow: -20px 0 48px rgba(16, 43, 70, 0.18);
+      transition: right 0.26s ease;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      z-index: 99;
+    }
+
+    .drawer.open { right: 14px; }
+
+    .drawer-head {
+      padding: 14px;
+      border-bottom: 1px solid #dce8f4;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5fafe;
+    }
+
+    .drawer-head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .close {
+      border: 1px solid #cadaeb;
+      background: #fff;
+      border-radius: 10px;
+      height: 34px;
+      padding: 0 10px;
+      cursor: pointer;
+      color: #3b5878;
+      font-weight: 700;
+    }
+
+    .drawer-body {
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .block {
+      border: 1px solid #d7e4f1;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .block h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .score {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score strong {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      color: #11557e;
+      border: 7px solid #bfe2f1;
+      background: #f2fbff;
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #e9f2fb;
+      overflow: hidden;
+      margin-top: 7px;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1886b0, #1ca27c);
+      transition: width 0.5s ease;
+    }
+
+    .tags {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 10px;
+    }
+
+    .tag.good { color: #186d50; background: #e7f8f1; border: 1px solid #b7e1cf; }
+    .tag.warn { color: #8a5b1f; background: #fff5e8; border: 1px solid #f0d6b1; }
+    .tag.bad { color: #8c3344; background: #fff0f3; border: 1px solid #efbcc7; }
+
+    .hint {
+      font-size: 12px;
+      color: var(--sub);
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1180px) {
+      .composer {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .composer .grow {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 880px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 270px minmax(0, 1fr);
+      }
+
+      .sidebar { grid-template-rows: auto auto auto 1fr auto; }
+
+      .session-list { max-height: 118px; }
+
+      .top {
+        grid-template-columns: 1fr;
+      }
+
+      .chips { justify-content: flex-start; }
+
+      .drawer {
+        width: calc(100vw - 20px);
+        right: -110vw;
+        top: 10px;
+        height: calc(100vh - 20px);
+      }
+
+      .drawer.open { right: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <aside class="sidebar panel">
+      <div class="brand">
+        <h1>AI 面试教练</h1>
+        <p>岗位化题库、多轮追问、报告反馈。</p>
+        <nav class="quick-links">
+          <a href="./auth-prototype.html">登录页</a>
+          <a href="./report-prototype.html">报告页</a>
+        </nav>
+      </div>
+
+      <button class="btn-new" id="newSessionBtn" type="button">+ 新建面试会话</button>
+      <input class="search" id="searchInput" placeholder="搜索会话标题..." />
+
+      <div class="session-list" id="sessionList"></div>
+
+      <div class="user">
+        <div class="avatar" id="avatar">A</div>
+        <div class="user-meta">
+          <strong id="userName">Alice</strong>
+          <span id="userRole">Java 后端 · 中级</span>
+        </div>
+        <button class="logout" type="button" id="logoutBtn">退出</button>
+      </div>
+    </aside>
+
+    <section class="main panel">
+      <header class="top">
+        <div>
+          <h2 id="title">Java 后端 - 项目深挖面试</h2>
+          <p id="subtitle">当前状态：待开始 · 支持文本 / 语音 / 简历面试</p>
+        </div>
+        <div class="chips">
+          <span class="chip" id="timer">倒计时 25:00</span>
+          <span class="chip" id="round">第 0 / 5 轮</span>
+          <span class="chip" id="eval">评估中：未开始</span>
+          <button class="close" type="button" id="openReportBtn">查看报告</button>
+        </div>
+      </header>
+
+      <section class="chat" id="chat"></section>
+
+      <footer class="composer">
+        <select id="roleSelect">
+          <option>Java 后端工程师</option>
+          <option>Web 前端工程师</option>
+          <option>测试开发工程师</option>
+        </select>
+
+        <select id="modeSelect">
+          <option value="TEXT">文本面试</option>
+          <option value="VOICE">语音面试</option>
+          <option value="RESUME">简历面试</option>
+        </select>
+
+        <input class="grow" id="input" type="text" placeholder="输入你的回答，按 Enter 发送" />
+
+        <label class="upload" for="resumeFile">上传简历</label>
+        <input id="resumeFile" type="file" accept=".pdf,.doc,.docx" />
+
+        <button class="btn-start" type="button" id="startBtn">开始面试</button>
+        <button class="btn-send" type="button" id="sendBtn" disabled>发送回答</button>
+      </footer>
+    </section>
+  </main>
+
+  <aside class="drawer" id="reportDrawer">
+    <header class="drawer-head">
+      <h3>面试评估报告</h3>
+      <button class="close" id="closeDrawer" type="button">关闭</button>
+    </header>
+    <div class="drawer-body">
+      <section class="block">
+        <h4>总分</h4>
+        <div class="score">
+          <strong id="totalScore">84</strong>
+          <div style="flex:1">
+            <div class="hint">综合评级：良好（可冲击更高岗位）</div>
+            <div class="bar"><i id="totalBar"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h4>维度明细</h4>
+        <div class="hint">技术正确性</div>
+        <div class="bar"><i style="--w:86%" data-width="86%"></i></div>
+        <div class="hint">知识深度</div>
+        <div class="bar"><i style="--w:78%" data-width="78%"></i></div>
+        <div class="hint">表达逻辑</div>
+        <div class="bar"><i style="--w:88%" data-width="88%"></i></div>
+        <div class="tags">
+          <span class="tag good">表达结构化</span>
+          <span class="tag warn">细节可量化</span>
+          <span class="tag bad">异常预案不足</span>
+        </div>
+      </section>
+
+      <section class="block">
+        <h4>改进建议</h4>
+        <p class="hint">1. 回答项目问题时补充量化指标（QPS、耗时、成功率）。</p>
+        <p class="hint">2. 对一致性方案增加反例和降级策略说明。</p>
+        <p class="hint">3. 多使用 STAR 结构组织经历题回答。</p>
+      </section>
+    </div>
+  </aside>
+
+  <script>
+    const sessionList = document.getElementById("sessionList");
+    const searchInput = document.getElementById("searchInput");
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
+    const startBtn = document.getElementById("startBtn");
+    const timerEl = document.getElementById("timer");
+    const roundEl = document.getElementById("round");
+    const evalEl = document.getElementById("eval");
+    const title = document.getElementById("title");
+    const subtitle = document.getElementById("subtitle");
+    const roleSelect = document.getElementById("roleSelect");
+    const reportDrawer = document.getElementById("reportDrawer");
+    const openReportBtn = document.getElementById("openReportBtn");
+    const closeDrawer = document.getElementById("closeDrawer");
+    const totalBar = document.getElementById("totalBar");
+    const resumeFile = document.getElementById("resumeFile");
+
+    let running = false;
+    let remaining = 25 * 60;
+    let timerRef = null;
+    let round = 0;
+    const maxRound = 5;
+
+    const sessions = [
+      { id: 1, title: "Java 后端 · 项目深挖", desc: "2分钟前 · 进行中" },
+      { id: 2, title: "前端工程师 · 场景题", desc: "今天 11:20 · 已结束" },
+      { id: 3, title: "测试开发 · 行为题", desc: "昨天 · 报告已生成" }
+    ];
+
+    function renderSessions(keyword = "") {
+      sessionList.innerHTML = "";
+      sessions
+        .filter(s => s.title.toLowerCase().includes(keyword.toLowerCase()))
+        .forEach((s, idx) => {
+          const div = document.createElement("article");
+          div.className = `session-item ${idx === 0 ? "active" : ""}`;
+          div.innerHTML = `<h4>${s.title}</h4><p>${s.desc}</p>`;
+          div.onclick = () => {
+            title.textContent = s.title + " 面试";
+            subtitle.textContent = "当前状态：载入历史记录（原型）";
+            document.querySelectorAll(".session-item").forEach(el => el.classList.remove("active"));
+            div.classList.add("active");
+          };
+          sessionList.appendChild(div);
+        });
+    }
+
+    function appendBubble(type, label, text) {
+      const b = document.createElement("article");
+      b.className = `bubble ${type}`;
+      b.innerHTML = `<span class="meta">${label}</span>${text}`;
+      chat.appendChild(b);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function tick() {
+      remaining -= 1;
+      const m = String(Math.floor(remaining / 60)).padStart(2, "0");
+      const s = String(remaining % 60).padStart(2, "0");
+      timerEl.textContent = `倒计时 ${m}:${s}`;
+      if (remaining <= 0) {
+        clearInterval(timerRef);
+        running = false;
+        sendBtn.disabled = true;
+        evalEl.textContent = "评估中：生成报告";
+        appendBubble("ai", "系统", "时间到，本次面试结束，报告已生成。");
+        openDrawer();
+      }
+    }
+
+    function startInterview() {
+      if (running) return;
+      running = true;
+      remaining = 25 * 60;
+      round = 1;
+      timerEl.textContent = "倒计时 25:00";
+      roundEl.textContent = `第 ${round} / ${maxRound} 轮`;
+      evalEl.textContent = "评估中：进行中";
+      sendBtn.disabled = false;
+      chat.innerHTML = "";
+      appendBubble("ai", "AI 面试官", `你好，我们开始 ${roleSelect.value} 的模拟面试。请先介绍你最近一个项目中的核心难题。`);
+      timerRef = setInterval(tick, 1000);
+    }
+
+    function nextAiFollowup() {
+      const pool = [
+        "请具体说明你如何做性能压测，以及关键指标是什么？",
+        "如果线上出现缓存和数据库不一致，你的补偿策略是什么？",
+        "这个方案的边界条件和失败场景有哪些？",
+        "如果团队资源不足，你会如何做优先级取舍？"
+      ];
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function sendAnswer() {
+      if (!running) return;
+      const text = input.value.trim();
+      if (!text) return;
+      appendBubble("user", "你", text);
+      input.value = "";
+
+      if (round < maxRound) {
+        round += 1;
+        roundEl.textContent = `第 ${round} / ${maxRound} 轮`;
+        setTimeout(() => appendBubble("ai", "AI 面试官", nextAiFollowup()), 320);
+      } else {
+        running = false;
+        clearInterval(timerRef);
+        sendBtn.disabled = true;
+        evalEl.textContent = "评估中：已完成";
+        setTimeout(() => {
+          appendBubble("ai", "AI 面试官", "本轮面试结束，已为你生成结构化评估报告。请查看右侧报告。")
+          openDrawer();
+        }, 320);
+      }
+    }
+
+    function openDrawer() {
+      reportDrawer.classList.add("open");
+      totalBar.style.width = document.getElementById("totalScore").textContent + "%";
+      document.querySelectorAll(".bar i[data-width]").forEach(i => {
+        i.style.width = i.getAttribute("data-width");
+      });
+    }
+
+    function closeReportDrawer() {
+      reportDrawer.classList.remove("open");
+    }
+
+    document.getElementById("newSessionBtn").addEventListener("click", () => {
+      title.textContent = roleSelect.value + " - 新会话";
+      subtitle.textContent = "当前状态：新会话已创建，请点击开始面试";
+      chat.innerHTML = "";
+      roundEl.textContent = "第 0 / 5 轮";
+      evalEl.textContent = "评估中：未开始";
+      sendBtn.disabled = true;
+      if (timerRef) clearInterval(timerRef);
+      running = false;
+      remaining = 25 * 60;
+      timerEl.textContent = "倒计时 25:00";
+    });
+
+    searchInput.addEventListener("input", () => renderSessions(searchInput.value));
+    startBtn.addEventListener("click", startInterview);
+    sendBtn.addEventListener("click", sendAnswer);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendAnswer();
+      }
+    });
+
+    openReportBtn.addEventListener("click", openDrawer);
+    closeDrawer.addEventListener("click", closeReportDrawer);
+
+    resumeFile.addEventListener("change", () => {
+      const file = resumeFile.files?.[0];
+      if (!file) return;
+      subtitle.textContent = `当前状态：已上传简历 ${file.name}（原型）`;
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      document.getElementById("avatar").textContent = "?";
+      document.getElementById("userName").textContent = "未登录";
+      document.getElementById("userRole").textContent = "点击左上角进入登录页";
+      subtitle.textContent = "当前状态：未登录（原型）";
+    });
+
+    renderSessions();
+    appendBubble("ai", "系统", "点击“开始面试”进入正式问答。结束后可生成多维评估报告。");
+  </script>
+</body>
+</html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 模拟面试教练 - 报告原型 V2</title>
+  <style>
+    :root {
+      --bg: #eef4f8;
+      --card: #ffffff;
+      --line: #d5e1ef;
+      --ink: #14253d;
+      --sub: #5a6f89;
+      --primary: #0f7196;
+      --primary-2: #179f7d;
+      --warn: #df8a3f;
+      --ok: #1f8a68;
+      --danger: #c84a5f;
+      --radius: 16px;
+      --shadow: 0 18px 42px rgba(16, 45, 77, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 12%, #d8e7ff 0, transparent 34%),
+        radial-gradient(circle at 90% 90%, #ffe4c7 0, transparent 34%),
+        var(--bg);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 16px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      min-height: 0;
+    }
+
+    .head {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .head h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .head p {
+      margin: 7px 0 0;
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    .links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .links a {
+      text-decoration: none;
+      border: 1px solid #c8d8ea;
+      color: #255d82;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      background: #f3fbff;
+    }
+
+    .filters {
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: #3f5674;
+      font-weight: 700;
+    }
+
+    .field select,
+    .field input {
+      height: 38px;
+      border: 1px solid #c8d7e9;
+      border-radius: 10px;
+      background: #fafeff;
+      font-size: 14px;
+      color: #183451;
+      padding: 0 10px;
+    }
+
+    .btn-refresh {
+      height: 38px;
+      border: 0;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 0 14px;
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--primary), var(--primary-2));
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .column {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      min-height: 0;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+      animation: rise 0.4s ease;
+    }
+
+    .card h3 {
+      margin: 0 0 9px;
+      font-size: 16px;
+    }
+
+    .overall {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .ring {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 10px solid #bfe1f0;
+      background: #f2fbff;
+      color: #11567f;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 30px;
+    }
+
+    .sub-line {
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .metric {
+      margin-bottom: 10px;
+    }
+
+    .metric-title {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .bar {
+      height: 9px;
+      border-radius: 999px;
+      background: #eaf2fb;
+      overflow: hidden;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1887b1, #1ca27b);
+      transition: width 0.45s ease;
+    }
+
+    .tags {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 10px;
+    }
+
+    .tag.ok { background: #e8f8f1; color: #186f51; border: 1px solid #b7e1cf; }
+    .tag.warn { background: #fff5e9; color: #8d5d22; border: 1px solid #f1d8b5; }
+    .tag.bad { background: #fff1f4; color: #8e3345; border: 1px solid #efbdc8; }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .node {
+      border-left: 3px solid #b7d2e8;
+      padding-left: 10px;
+    }
+
+    .node strong {
+      font-size: 13px;
+      color: #1f4d70;
+    }
+
+    .node p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--sub);
+      line-height: 1.6;
+    }
+
+    .plan {
+      display: grid;
+      gap: 8px;
+    }
+
+    .todo {
+      border: 1px dashed #b9d4e8;
+      border-radius: 10px;
+      background: #f7fbff;
+      padding: 9px 10px;
+      font-size: 13px;
+      color: #2f5273;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 8px 12px 14px;
+      font-size: 12px;
+      color: #657893;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 980px) {
+      .filters {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .head h1 { font-size: 24px; }
+      .overall { grid-template-columns: 1fr; }
+      .ring { margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="head panel">
+      <div>
+        <h1>结构化评估报告</h1>
+        <p>面向比赛演示：清晰展示总分、维度、成长轨迹与改进计划。</p>
+      </div>
+      <nav class="links">
+        <a href="./auth-prototype.html">登录页</a>
+        <a href="./ui-prototype.html">面试主界面</a>
+      </nav>
+    </header>
+
+    <section class="filters panel">
+      <div class="field">
+        <label>岗位</label>
+        <select id="roleSel">
+          <option>Java 后端工程师</option>
+          <option>Web 前端工程师</option>
+          <option>测试开发工程师</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>面试阶段</label>
+        <select id="stageSel">
+          <option>技术一面</option>
+          <option>综合二面</option>
+          <option>HR面</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>日期范围</label>
+        <input id="dateRange" type="text" value="2026-03-01 ~ 2026-03-13" />
+      </div>
+      <div class="field">
+        <label>样本数</label>
+        <input id="sampleCount" type="text" value="最近 6 次模拟" />
+      </div>
+      <button class="btn-refresh" id="refreshBtn" type="button">刷新报告</button>
+    </section>
+
+    <section class="content panel">
+      <div class="column">
+        <article class="card">
+          <h3>综合表现</h3>
+          <div class="overall">
+            <div class="ring" id="totalScore">86</div>
+            <div>
+              <p class="sub-line" id="summaryText">你在技术正确性和表达结构上表现稳定，已经具备较强的一面通过潜力。</p>
+              <div class="tags">
+                <span class="tag ok">表达清晰</span>
+                <span class="tag ok">项目主线完整</span>
+                <span class="tag warn">细节可再量化</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>维度评分</h3>
+          <div class="metric">
+            <div class="metric-title"><span>技术正确性</span><strong id="m1">88</strong></div>
+            <div class="bar"><i id="b1"></i></div>
+          </div>
+          <div class="metric">
+            <div class="metric-title"><span>知识深度</span><strong id="m2">79</strong></div>
+            <div class="bar"><i id="b2"></i></div>
+          </div>
+          <div class="metric">
+            <div class="metric-title"><span>逻辑严谨性</span><strong id="m3">84</strong></div>
+            <div class="bar"><i id="b3"></i></div>
+          </div>
+          <div class="metric">
+            <div class="metric-title"><span>岗位匹配度</span><strong id="m4">90</strong></div>
+            <div class="bar"><i id="b4"></i></div>
+          </div>
+          <div class="metric">
+            <div class="metric-title"><span>表达与沟通</span><strong id="m5">87</strong></div>
+            <div class="bar"><i id="b5"></i></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>能力成长轨迹</h3>
+          <div class="timeline" id="timeline"></div>
+        </article>
+      </div>
+
+      <div class="column">
+        <article class="card">
+          <h3>亮点回顾</h3>
+          <p class="sub-line">你能较自然地把高并发、缓存一致性、降级策略串成完整链路，具备面试中的“问题拆解能力”。</p>
+          <p class="sub-line">在行为题里能把项目背景、职责和结果讲清楚，表达更偏“业务价值导向”。</p>
+        </article>
+
+        <article class="card">
+          <h3>短板与改进方向</h3>
+          <p class="sub-line">1. 回答技术方案时，请补充可量化指标（吞吐、延迟、可用性）。</p>
+          <p class="sub-line">2. 对“失败场景”描述还不够充分，建议形成统一答题模板。</p>
+          <p class="sub-line">3. 在追问环节可适当先结论后细节，提升沟通节奏。</p>
+        </article>
+
+        <article class="card">
+          <h3>下周训练计划</h3>
+          <div class="plan">
+            <div class="todo">任务1：完成《分布式事务》专题答题卡（2次）</div>
+            <div class="todo">任务2：录制1次3分钟项目讲解并做自评</div>
+            <div class="todo">任务3：针对“故障处理”做一轮追问练习</div>
+            <div class="todo">任务4：复盘本周报告，更新个人高频问答库</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">报告页 V2 · 与登录页/面试页统一视觉风格 · 适用于比赛演示截图与录屏</footer>
+  </main>
+
+  <script>
+    const b1 = document.getElementById("b1");
+    const b2 = document.getElementById("b2");
+    const b3 = document.getElementById("b3");
+    const b4 = document.getElementById("b4");
+    const b5 = document.getElementById("b5");
+    const totalScore = document.getElementById("totalScore");
+    const summaryText = document.getElementById("summaryText");
+    const timeline = document.getElementById("timeline");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    const growth = [
+      { date: "03-02", score: 74, note: "首次模拟，回答偏紧张" },
+      { date: "03-05", score: 79, note: "结构化表达明显提升" },
+      { date: "03-08", score: 82, note: "项目细节更完整" },
+      { date: "03-10", score: 85, note: "追问环节稳定" },
+      { date: "03-13", score: 86, note: "综合表现进入良好区间" }
+    ];
+
+    function renderGrowth() {
+      timeline.innerHTML = "";
+      growth.forEach(item => {
+        const node = document.createElement("article");
+        node.className = "node";
+        node.innerHTML = `<strong>${item.date} · 总分 ${item.score}</strong><p>${item.note}</p>`;
+        timeline.appendChild(node);
+      });
+    }
+
+    function fillBars(scores) {
+      [b1, b2, b3, b4, b5].forEach((bar, i) => {
+        bar.style.width = scores[i] + "%";
+      });
+    }
+
+    function rerenderReport() {
+      const base = 78 + Math.floor(Math.random() * 12);
+      const s1 = Math.min(95, base + Math.floor(Math.random() * 6));
+      const s2 = Math.max(70, base - Math.floor(Math.random() * 8));
+      const s3 = Math.min(94, base + Math.floor(Math.random() * 4));
+      const s4 = Math.min(96, base + Math.floor(Math.random() * 7));
+      const s5 = Math.min(93, base + Math.floor(Math.random() * 5));
+
+      totalScore.textContent = String(base);
+      document.getElementById("m1").textContent = s1;
+      document.getElementById("m2").textContent = s2;
+      document.getElementById("m3").textContent = s3;
+      document.getElementById("m4").textContent = s4;
+      document.getElementById("m5").textContent = s5;
+      fillBars([s1, s2, s3, s4, s5]);
+
+      summaryText.textContent = base >= 85
+        ? "你在多维指标上进入良好区间，建议重点突破“深度追问”能力。"
+        : "当前基础已具备，建议优先提升表达结构与技术细节的量化能力。";
+    }
+
+    renderGrowth();
+    rerenderReport();
+    refreshBtn.addEventListener("click", rerenderReport);
+  </script>
+</body>
+</html>
